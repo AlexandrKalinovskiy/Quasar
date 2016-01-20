@@ -166,8 +166,8 @@ namespace Quasar
 
                 foreach (var security in securities)
                 {
-                    var startSession = new DateTime(DateTime.Now.Year, DateTime.Now.Month, 19, 9, 30, 00);  //начало торговой сессии 
-                    var endSession = new DateTime(DateTime.Now.Year, DateTime.Now.Month, 19, 15, 55, 00);   //окончание торговой сессии 
+                    var startSession = new DateTime(DateTime.Now.Year, DateTime.Now.Month, 20, 9, 30, 00);  //начало торговой сессии 
+                    var endSession = new DateTime(DateTime.Now.Year, DateTime.Now.Month, 20, 15, 55, 00);   //окончание торговой сессии 
 
                     bool isDaysSuccess;
                     bool is5MinutesSucсess;
@@ -208,12 +208,12 @@ namespace Quasar
 
         private void Strategy_Processed(int a, int b)
         {
-            Processed(a, b);   
+            Processed(a, b);
         }
 
         private void Strategy_RegistrationOrder()
         {
-            //logManager.Sources.Add(strategy); //при открытии позиции, регистрируем данную стратегию в менеджере логирования, чтобы следить за её работой
+            logManager.Sources.Add(strategy); //при открытии позиции, регистрируем данную стратегию в менеджере логирования, чтобы следить за её работой
         }
     }
 }

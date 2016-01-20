@@ -5,7 +5,6 @@ using StockSharp.BusinessEntities;
 using StockSharp.Messages;
 using System;
 using System.Collections.Generic;
-using System.Diagnostics;
 
 namespace Quasar
 {
@@ -22,7 +21,7 @@ namespace Quasar
         decimal aTr = 0;                            //ATR
 
         public event Action RegistrationOrder;      //на данное событие подписываются внешние обработчики. Событие наступает при выполненнии всех условий стратегии и перед регистрацией заявки на бирже
-        public event Action<int, int> Processed;   //собыитие принимает 2 апараметра <Количество успешно обработанных инструментов, количество необработанных инструментов>
+        public event Action<int, int> Processed;   //событие принимает 2 апараметра <Количество успешно обработанных инструментов, количество необработанных инструментов>
 
         public List<Candle> IntradayCandles
         {
@@ -43,13 +42,12 @@ namespace Quasar
             set
             {
                 if (value.Count > 0)
-                    dayCandles = value;
+                    dayCandles = value; 
             }
         }
 
         protected override void OnStarted()
-        {
-            base.OnStarted();
+        {           
             if (intradayCandles != null && dayCandles != null)
             {
                 foreach (var dayCandle in dayCandles)
@@ -88,26 +86,25 @@ namespace Quasar
                                 SendOrder(Sides.Sell);
                                 break;
                             default:
-                                Stop(); //если условия стратегии не выполняются, то данный экземпляр останавливаем
+                                Stop();
                                 break;
                         }
                     }
                     else
                     {
-                        Stop(); //если условия стратегии не выполняются, то данный экземпляр останавливаем
+                        Stop();
                     }
                 }
-                else if (ProcessState != ProcessStates.Stopped)
-                {
-                    Stop(); //если условия стратегии не выполняются, то данный экземпляр останавливаем
-                }
+                Stop();
 
                 Processed(1, 0);    //инициируем событие обработки инструмента <1 - количество успешно обработанных инструментов, 0 - количество необработанных инструментов>                
             }
             else
             {
                 Processed(0, 1);
+                Stop();
             }
+            base.OnStarted();
         }
 
         //метод возвращает текущий коэффициент объема
@@ -161,7 +158,7 @@ namespace Quasar
             return 0;
         }
 
-        //метод регистрирует ордер на бирже
+        //Метод регистрирует ордер на бирже
         private bool SendOrder(Sides orderSide)
         {
             RegistrationOrder();
