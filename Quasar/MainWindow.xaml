@@ -13,5 +13,6 @@
         <Button x:Name="btnScanner" Content="Scanner" HorizontalAlignment="Left" Margin="231,280,0,0" VerticalAlignment="Top" Width="75" Click="btnScanner_Click"/>
         <Label x:Name="lblThreads" Content="Label" HorizontalAlignment="Left" Margin="10,82,0,0" VerticalAlignment="Top"/>
         <Label x:Name="lblTimer" Content="Label" HorizontalAlignment="Left" Margin="10,108,0,0" VerticalAlignment="Top"/>
+        <Button x:Name="btnStop" Content="Button" HorizontalAlignment="Left" Margin="231,246,0,0" VerticalAlignment="Top" Width="75" Click="btnStop_Click"/>
     </Grid>
 </Window>

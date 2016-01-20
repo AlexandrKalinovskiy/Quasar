@@ -49,6 +49,7 @@ namespace Quasar
 
         protected override void OnStarted()
         {
+            base.OnStarted();
             if (intradayCandles != null && dayCandles != null)
             {
                 foreach (var dayCandle in dayCandles)
@@ -101,9 +102,7 @@ namespace Quasar
                     Stop(); //если условия стратегии не выполняются, то данный экземпляр останавливаем
                 }
 
-                Processed(1, 0);    //инициируем событие обработки инструмента <1 - количество успешно обработанных инструментов, 0 - количество необработанных инструментов>
-
-                base.OnStarted();
+                Processed(1, 0);    //инициируем событие обработки инструмента <1 - количество успешно обработанных инструментов, 0 - количество необработанных инструментов>                
             }
             else
             {

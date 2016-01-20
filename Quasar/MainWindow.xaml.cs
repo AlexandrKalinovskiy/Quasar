@@ -33,17 +33,17 @@ namespace Quasar
 
             lblThreads.Content = "Доступно потоков: " + availableWorkThreads;
 
-            if ((successCount + failCount) == 2262)
+            if ((successCount + failCount) == 2230)
             {
                 successCount = 0;
                 failCount = 0;               
-                worker.Scanner(30);
+                //worker.Scanner(30);
             }
         }
 
         ~MainWindow()
         {
-            Debug.Print("Отключиться!!!");
+            Debug.Print("Destructor!!!");
             worker.Disconnect();
         }    
 
@@ -78,9 +78,14 @@ namespace Quasar
             worker.Disconnect();
         }
 
+        private void btnStop_Click(object sender, RoutedEventArgs e)
+        {
+            worker.Stop();
+        }
+
         private void btnScanner_Click(object sender, RoutedEventArgs e)
         {
-            worker.Scanner(30);
+            worker.Scanner(50);
         }
     }
 }
