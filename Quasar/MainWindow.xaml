@@ -1,0 +1,17 @@
+﻿<Window x:Class="Quasar.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:local="clr-namespace:Quasar"
+        mc:Ignorable="d"
+        Title="MainWindow" Height="350" Width="525">
+    <Grid>
+        <Button x:Name="btnConnect" Content="Connect" HorizontalAlignment="Left" Margin="320,280,0,0" VerticalAlignment="Top" Width="75" Click="btnConnect_Click"/>
+        <Button x:Name="btnDisconnect" Content="Disconnected" HorizontalAlignment="Left" Margin="411,280,0,0" VerticalAlignment="Top" Width="75" Click="btnDisconnect_Click"/>
+        <Label x:Name="lblSec" Content="Label" HorizontalAlignment="Left" Margin="10,56,0,0" VerticalAlignment="Top"/>
+        <Button x:Name="btnScanner" Content="Scanner" HorizontalAlignment="Left" Margin="231,280,0,0" VerticalAlignment="Top" Width="75" Click="btnScanner_Click"/>
+        <Label x:Name="lblThreads" Content="Label" HorizontalAlignment="Left" Margin="10,82,0,0" VerticalAlignment="Top"/>
+        <Label x:Name="lblTimer" Content="Label" HorizontalAlignment="Left" Margin="10,108,0,0" VerticalAlignment="Top"/>
+    </Grid>
+</Window>
