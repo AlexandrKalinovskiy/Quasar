@@ -10,9 +10,9 @@
         <Button x:Name="btnConnect" Content="Connect" HorizontalAlignment="Left" Margin="320,280,0,0" VerticalAlignment="Top" Width="75" Click="btnConnect_Click"/>
         <Button x:Name="btnDisconnect" Content="Disconnected" HorizontalAlignment="Left" Margin="411,280,0,0" VerticalAlignment="Top" Width="75" Click="btnDisconnect_Click"/>
         <Label x:Name="lblSec" Content="Label" HorizontalAlignment="Left" Margin="10,56,0,0" VerticalAlignment="Top"/>
-        <Button x:Name="btnScanner" Content="Scanner" HorizontalAlignment="Left" Margin="231,280,0,0" VerticalAlignment="Top" Width="75" Click="btnScanner_Click"/>
+        <Button x:Name="btnStart" Content="Start" HorizontalAlignment="Left" Margin="231,280,0,0" VerticalAlignment="Top" Width="75" Click="btnStart_Click"/>
         <Label x:Name="lblThreads" Content="Label" HorizontalAlignment="Left" Margin="10,82,0,0" VerticalAlignment="Top"/>
         <Label x:Name="lblTimer" Content="Label" HorizontalAlignment="Left" Margin="10,108,0,0" VerticalAlignment="Top"/>
-        <Button x:Name="btnStop" Content="Button" HorizontalAlignment="Left" Margin="231,246,0,0" VerticalAlignment="Top" Width="75" Click="btnStop_Click"/>
+        <Button x:Name="btnStop" Content="Stop" HorizontalAlignment="Left" Margin="231,246,0,0" VerticalAlignment="Top" Width="75" Click="btnStop_Click"/>
     </Grid>
 </Window>
