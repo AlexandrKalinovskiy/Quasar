@@ -17,8 +17,8 @@ namespace Quasar
         private IQFeedTrader trader;
         private bool run = false;
 
-        private DateTime startSession = new DateTime(DateTime.Now.Year, DateTime.Now.Month, 20, 9, 30, 00);  //начало торговой сессии 
-        private DateTime endSession = new DateTime(DateTime.Now.Year, DateTime.Now.Month, 20, 15, 55, 00);   //окончание торговой сессии 
+        private DateTime startSession = new DateTime(DateTime.Now.Year, DateTime.Now.Month, 21, 9, 30, 00);  //начало торговой сессии 
+        private DateTime endSession = new DateTime(DateTime.Now.Year, DateTime.Now.Month, 21, 15, 55, 00);   //окончание торговой сессии 
 
         //коллекция для хранения списка загруженных инструментов
         private List<Security> securities = new List<Security>();
@@ -105,6 +105,8 @@ namespace Quasar
             int securitiesCount = securities.Count;         //количество загруженный инструментов
             int stakeSize = securitiesCount / useThreads;   //размер "пучка" инструментов для отправки в поток
             List<Security> securitiesStake = new List<Security>();
+
+            Debug.Print("Securities count {0}", securitiesCount);
 
             Func<object, int> func = new Func<object, int>(GetCandles);
             IAsyncResult asyncResult;

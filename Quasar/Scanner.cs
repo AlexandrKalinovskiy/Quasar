@@ -74,17 +74,19 @@ namespace Quasar
 
                 if (aTr >= 1m && aTr <= 2m)
                 {
-                    if (ATRPlay() >= 3m && VolumePlay() >= 1m)
+                    if (ATRPlay() >= 0.5m && VolumePlay() >= 0.8m)
                     {
                         int trend = Trend(30, 40);
-
+                        decimal openPrice = 0;
                         switch (trend)
                         {
                             case 1:
-                                StrategyStart(Sides.Buy);
+                                if(IsBaseRoundPrice(4, Sides.Buy, out openPrice))
+                                    StrategyStart(Sides.Buy, openPrice);
                                 break;
                             case -1:
-                                StrategyStart(Sides.Sell);
+                                if (IsBaseRoundPrice(4, Sides.Sell, out openPrice))
+                                    StrategyStart(Sides.Sell, openPrice);
                                 break;
                             default:
                                 break;
@@ -149,18 +151,66 @@ namespace Quasar
             return 0;
         }
 
-        private void StrategyStart(Sides sides)
+        private void StrategyStart(Sides sides, decimal price)
         {
             strategy = new LevelsStrategy()  //Создаем экземпляр стратегии с определенными параметрами
             {
                 Security = dayCandles[0].Security,
                 Portfolio = new Portfolio(),
                 Sides = sides,
+                Price = price,
                 DisposeOnStop = true,
             };
             StrategyStarted(strategy);
 
             strategy.Start();
+        }
+
+        //Метод определяет находится ли база на/под круглым уровнем
+        private bool IsBaseRoundPrice(int count, Sides sides, out decimal round)
+        {
+            for (int i = 0; i < count; i++)
+            {
+                if (sides == Sides.Buy)
+                {
+                    decimal lowPrice = intradayCandles[intradayCandles.Count - (i + 1)].LowPrice;
+                    round = Math.Round(lowPrice, 1);
+                    int integer = (int)round;                   //Целая часть
+                    decimal fraction = round - integer;         //Дробная часть
+                    decimal dif = lowPrice - round;
+
+                    if ((fraction == 0 || fraction == 0.5m) && dif <= 0.5m && dif >= 0) //Если уровень круглый и цена хаев не дальше чем на допустимое количество центов
+                    {
+                        Debug.Print("Low {0}, Круглый уровень {1}, low - round = {2} {3}", lowPrice, round, lowPrice - round, dayCandles[0].Security);
+                        round = round + 0.02m;
+                    }
+                    else
+                    {                        
+                        return false;   //Если хоть одна свечка не соответствует требованиям, то завершаем выполнение метода с отрицательным результатом
+                    }
+                }
+                else
+                {
+                    decimal highPrice = intradayCandles[intradayCandles.Count - (i + 1)].HighPrice;
+                    round = Math.Round(highPrice, 1);
+                    int integer = (int)round;                   //Целая часть
+                    decimal fraction = round - integer;         //Дробная часть
+                    decimal dif = round - highPrice;
+
+                    if ((fraction == 0 || fraction == 0.5m) && dif <= 0.5m && dif >= 0) //Если уровень круглый и цена хаев не дальше чем на допустимое количество центов
+                    {
+                        Debug.Print("High {0}, Круглый уровень {1}, round - high = {2} {3}", highPrice, round, round - highPrice, dayCandles[0].Security);
+                        round = round - 0.02m;
+                    }
+                    else
+                    {                       
+                        return false;   //Если хоть одна свечка не соответствует требованиям, то завершаем выполнение метода с отрицательным результатом
+                    }
+
+                }              
+            }
+
+            return true;
         }
 
         public event Action<LevelsStrategy> StrategyStarted;

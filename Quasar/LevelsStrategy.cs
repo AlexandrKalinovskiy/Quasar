@@ -10,7 +10,8 @@ namespace Quasar
 {
     public class LevelsStrategy : Strategy
     {
-        private Sides sides;    //Направление заявки
+        private Sides sides;    //Направление ордера
+        private decimal price;  //Цена ордера
 
         public Sides Sides
         {
@@ -20,12 +21,20 @@ namespace Quasar
             }
         }
 
+        public decimal Price
+        {
+            set
+            {
+                price = value;
+            }
+        }
+
         protected override void OnStarted()
         {
             Order order = new Order()
             {
                 Security = Security,
-                Price = 10,
+                Price = price,
                 Volume = 100,
                 Type = OrderTypes.Limit,
                 Direction = sides
