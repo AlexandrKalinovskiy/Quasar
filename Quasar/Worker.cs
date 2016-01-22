@@ -17,8 +17,8 @@ namespace Quasar
         private IQFeedTrader trader;
         private bool run = false;
 
-        private DateTime startSession = new DateTime(DateTime.Now.Year, DateTime.Now.Month, 21, 9, 30, 00);  //начало торговой сессии 
-        private DateTime endSession = new DateTime(DateTime.Now.Year, DateTime.Now.Month, 21, 15, 55, 00);   //окончание торговой сессии 
+        private DateTime startSession = new DateTime(DateTime.Now.Year, DateTime.Now.Month, 22, 9, 30, 00);  //начало торговой сессии 
+        private DateTime endSession = new DateTime(DateTime.Now.Year, DateTime.Now.Month, 22, 15, 55, 00);   //окончание торговой сессии 
 
         //коллекция для хранения списка загруженных инструментов
         private List<Security> securities = new List<Security>();

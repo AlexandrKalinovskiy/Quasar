@@ -74,7 +74,8 @@ namespace Quasar
                
                 if (aTr >= 1m && aTr <= 2m)
                 {
-                    if (ATRPlay() >= 0.5m && VolumePlay() >= 0.8m && IsSmooth())
+                    IsSmooth();
+                    if (ATRPlay() >= 0.5m && VolumePlay() >= 0.8m)
                     {
                         int trend = Trend(30, 40);
                         decimal openPrice = 0;
@@ -248,7 +249,7 @@ namespace Quasar
 
             if (summGaps <= 1.3m && percent >= 57)
             {
-                //Debug.Print("Summ gaps: {0}. Тело равно {1}% от размера свечек {2}", summGaps, percent, intradayCandles[0].Security);
+                Debug.Print("Summ gaps: {0}. Тело равно {1}% от размера свечек {2}", summGaps, percent, intradayCandles[0].Security);
                 return true;
             }
                 
