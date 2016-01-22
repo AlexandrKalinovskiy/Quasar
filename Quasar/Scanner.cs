@@ -45,9 +45,9 @@ namespace Quasar
         }
 
         public int Scan()
-        {
+        {           
             if (intradayCandles != null && dayCandles != null)
-            {
+            {        
                 foreach (var dayCandle in dayCandles)
                 {
                     sumDaysVolume += dayCandle.TotalVolume;
@@ -71,10 +71,10 @@ namespace Quasar
                 }
 
                 aTr = ATR();
-
+               
                 if (aTr >= 1m && aTr <= 2m)
                 {
-                    if (ATRPlay() >= 0.5m && VolumePlay() >= 0.8m)
+                    if (ATRPlay() >= 0.5m && VolumePlay() >= 0.8m && IsSmooth())
                     {
                         int trend = Trend(30, 40);
                         decimal openPrice = 0;
@@ -184,7 +184,7 @@ namespace Quasar
 
                     if ((fraction == 0 || fraction == 0.5m) && dif <= 0.5m && dif >= 0) //Если уровень круглый и цена хаев не дальше чем на допустимое количество центов
                     {
-                        Debug.Print("Low {0}, Круглый уровень {1}, low - round = {2} {3}", lowPrice, round, lowPrice - round, dayCandles[0].Security);
+                        //Debug.Print("Low {0}, Круглый уровень {1}, low - round = {2} {3}", lowPrice, round, lowPrice - round, dayCandles[0].Security);
                         price = round + 0.02m;
                     }
                     else
@@ -202,7 +202,7 @@ namespace Quasar
 
                     if ((fraction == 0 || fraction == 0.5m) && dif <= 0.5m && dif >= 0) //Если уровень круглый и цена хаев не дальше чем на допустимое количество центов
                     {
-                        Debug.Print("High {0}, Круглый уровень {1}, round - high = {2} {3}", highPrice, round, round - highPrice, dayCandles[0].Security);
+                        //Debug.Print("High {0}, Круглый уровень {1}, round - high = {2} {3}", highPrice, round, round - highPrice, dayCandles[0].Security);
                         price = round - 0.02m;
                     }
                     else
@@ -214,6 +214,45 @@ namespace Quasar
             }
 
             return price;
+        }
+
+        //Метод проверяет акцию на плавность
+        /// <summary>
+        /// Алгоритм заключается в следующем: прогоняется один или более дней внутрдиневных свечек и суммируется разница цен закрытия предыдущей свечки с ценой открытия текущей.
+        /// Так же считается сумма размеров тел свечек и сумма общих размеров свечек, после чего выводится средний процент.
+        /// Путем подбора допустимых значений будет определятся плавность акции. Т.к акции будут примерно с одинаковым ATR, то и сумма должна быть примерна одинакова.
+        /// </summary>
+        private bool IsSmooth()
+        {
+            decimal summGaps = 0;
+            decimal bodiesSumm = 0;
+            decimal hlSumm = 0;
+            int percent = 0;
+
+            for (int i = 0; i < intradayCandles.Count - 1; i++)
+            {
+                summGaps += Math.Abs(intradayCandles[i].ClosePrice - intradayCandles[i + 1].OpenPrice);     //Суммируем ГЕПы
+                bodiesSumm += Math.Abs(intradayCandles[i].OpenPrice - intradayCandles[i].ClosePrice);       //Сумма размеров тел свечек
+                hlSumm += Math.Abs(intradayCandles[i].HighPrice - intradayCandles[i].LowPrice);             //Сумма размеров свечек
+            }
+
+            bodiesSumm += Math.Abs(intradayCandles[intradayCandles.Count - 1].OpenPrice - intradayCandles[intradayCandles.Count - 1].ClosePrice);       //Добавляем последнюю свечку
+            hlSumm += Math.Abs(intradayCandles[intradayCandles.Count - 1].HighPrice - intradayCandles[intradayCandles.Count - 1].LowPrice);             //Добавляем последнюю свечку
+            
+            //Считаем средние значения
+            bodiesSumm = bodiesSumm / intradayCandles.Count;    
+            hlSumm = hlSumm / intradayCandles.Count;
+
+            //Считаем процент размера тел от размеров свечек
+            percent = (int)Math.Round(bodiesSumm * 100 / hlSumm);
+
+            if (summGaps <= 1.3m && percent >= 57)
+            {
+                //Debug.Print("Summ gaps: {0}. Тело равно {1}% от размера свечек {2}", summGaps, percent, intradayCandles[0].Security);
+                return true;
+            }
+                
+            return false;
         }
 
         public event Action<LevelsStrategy> StrategyStarted;
