@@ -69,7 +69,6 @@ namespace Quasar
         ~MainWindow()
         {
             Debug.Print("Destructor!!!");
-            worker.Disconnect();
         }    
 
         private void ConnectionStatus(int connectionStatus)

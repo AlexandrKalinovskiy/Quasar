@@ -86,11 +86,12 @@ namespace Quasar
             foreach (var security in allSecurities)
             {
                 if (security.Board == ExchangeBoard.Nyse && security.Type == SecurityTypes.Stock && !security.Code.Contains("-")/* && security.Code == "BRK.A" && !security.Code.Contains("*") && !security.Code.Contains("+")*/)
-                {
+                {                    
                     //if (sc < 30)
                     securities.Add(security);
                     //sc++;
                 }
+
             }
         }
 

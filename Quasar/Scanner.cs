@@ -47,7 +47,7 @@ namespace Quasar
         public int Scan()
         {           
             if (intradayCandles != null && dayCandles != null)
-            {        
+            {
                 foreach (var dayCandle in dayCandles)
                 {
                     sumDaysVolume += dayCandle.TotalVolume;
@@ -71,8 +71,8 @@ namespace Quasar
                 }
 
                 aTr = ATR();
-               
-                if (aTr >= 1m && aTr <= 2m)
+                
+                if (aTr >= 0.8m && aTr <= 3m)
                 {
                     IsSmooth();
                     if (ATRPlay() >= 0.5m && VolumePlay() >= 0.8m)
@@ -225,34 +225,42 @@ namespace Quasar
         /// </summary>
         private bool IsSmooth()
         {
-            decimal summGaps = 0;
-            decimal bodiesSumm = 0;
-            decimal hlSumm = 0;
             int percent = 0;
+
+            decimal bodySize = 0;
+            decimal candleSize = 0;
+            int defectiveCount = 0;
+            int defectivePercent = 0;
+            decimal diffGap = 0;
+            int gapsCount = 0;
+            int gapsPercent = 0;
 
             for (int i = 0; i < intradayCandles.Count - 1; i++)
             {
-                summGaps += Math.Abs(intradayCandles[i].ClosePrice - intradayCandles[i + 1].OpenPrice);     //Суммируем ГЕПы
-                bodiesSumm += Math.Abs(intradayCandles[i].OpenPrice - intradayCandles[i].ClosePrice);       //Сумма размеров тел свечек
-                hlSumm += Math.Abs(intradayCandles[i].HighPrice - intradayCandles[i].LowPrice);             //Сумма размеров свечек
+                bodySize = Math.Abs(intradayCandles[i].OpenPrice - intradayCandles[i].ClosePrice);
+                candleSize = Math.Abs(intradayCandles[i].HighPrice - intradayCandles[i].LowPrice);
+                diffGap = Math.Abs(intradayCandles[i].ClosePrice - intradayCandles[i + 1].OpenPrice);
+
+                if (candleSize > 0)
+                {
+                    percent = (int)Math.Round(bodySize * 100 / candleSize);
+
+                    if (percent < 60)
+                        defectiveCount++;
+                }
+
+                if(diffGap > 0.02m)
+                {
+                    gapsCount++;
+                }
             }
 
-            bodiesSumm += Math.Abs(intradayCandles[intradayCandles.Count - 1].OpenPrice - intradayCandles[intradayCandles.Count - 1].ClosePrice);       //Добавляем последнюю свечку
-            hlSumm += Math.Abs(intradayCandles[intradayCandles.Count - 1].HighPrice - intradayCandles[intradayCandles.Count - 1].LowPrice);             //Добавляем последнюю свечку
-            
-            //Считаем средние значения
-            bodiesSumm = bodiesSumm / intradayCandles.Count;    
-            hlSumm = hlSumm / intradayCandles.Count;
+            defectivePercent = defectiveCount * 100 / intradayCandles.Count;
+            gapsPercent = gapsCount * 100 / intradayCandles.Count;
 
-            //Считаем процент размера тел от размеров свечек
-            percent = (int)Math.Round(bodiesSumm * 100 / hlSumm);
+            if (aTr >= 0.8m && aTr <= 1.2m && gapsPercent <= 12 && defectivePercent < 57)
+                Debug.Print("defectiveCount: {0}, defectivePercent: {1} gapsCount: {2}, gaps%: {3} {4}", defectiveCount, defectivePercent, gapsCount, gapsPercent, intradayCandles[0].Security.Code);
 
-            if (summGaps <= 1.3m && percent >= 57)
-            {
-                Debug.Print("Summ gaps: {0}. Тело равно {1}% от размера свечек {2}", summGaps, percent, intradayCandles[0].Security);
-                return true;
-            }
-                
             return false;
         }
 
