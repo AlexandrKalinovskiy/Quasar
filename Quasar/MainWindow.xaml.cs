@@ -59,7 +59,7 @@ namespace Quasar
 
             lblSec.Content = "Успешно обработано: " + successCount + ", Не обработано: " + failCount + ", Всего: " + (successCount + failCount);           
 
-            if ((successCount + failCount) == 2230)
+            if ((successCount + failCount) == worker.SecuritiesCount)
             {
                 successCount = 0;
                 failCount = 0;               

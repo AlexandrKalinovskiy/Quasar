@@ -1,4 +1,5 @@
 ﻿using StockSharp.Algo.Candles;
+using StockSharp.Blackwood;
 using StockSharp.BusinessEntities;
 using StockSharp.IQFeed;
 using StockSharp.Logging;
@@ -7,18 +8,32 @@ using StockSharp.Xaml;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Net;
 using System.Threading;
 
 namespace Quasar
 {
     public class Worker
     {
+        private BlackwoodTrader Trader;
+
+
         // объявляем шлюз
         private IQFeedTrader trader;
         private bool run = false;
 
-        private DateTime startSession = new DateTime(DateTime.Now.Year, DateTime.Now.Month, 22, 9, 30, 00);  //начало торговой сессии 
-        private DateTime endSession = new DateTime(DateTime.Now.Year, DateTime.Now.Month, 22, 15, 55, 00);   //окончание торговой сессии 
+        private int securitiesCount = 0;
+
+        public int SecuritiesCount
+        {
+            get
+            {
+                return securitiesCount;
+            }
+        }
+
+        private DateTime startSession = new DateTime(DateTime.Now.Year, DateTime.Now.Month, 26, 9, 30, 00);  //начало торговой сессии 
+        private DateTime endSession = new DateTime(DateTime.Now.Year, DateTime.Now.Month, 26, 15, 55, 00);   //окончание торговой сессии 
 
         //коллекция для хранения списка загруженных инструментов
         private List<Security> securities = new List<Security>();
@@ -30,22 +45,88 @@ namespace Quasar
         public void Connect()
         {
             trader = new IQFeedTrader();
-            trader.Connected += () => SetConnectionStatus(0);
-            trader.Disconnected += () => SetConnectionStatus(1);
-            trader.ConnectionError += error => SetConnectionStatus(error);
+            //trader.Connected += () => SetConnectionStatus(0);
+            //trader.Disconnected += () => SetConnectionStatus(1);
+            //trader.ConnectionError += error => SetConnectionStatus(error);
 
-            trader.Connect();
+            //trader.Connect();
 
-            var monitor = new MonitorWindow();
-            monitor.Show();
+            //var monitor = new MonitorWindow();
+            //monitor.Show();
 
-            logManager.Listeners.Add(new GuiLogListener(monitor));
-            logManager.Sources.Add(trader);
+            //logManager.Listeners.Add(new GuiLogListener(monitor));
+            //logManager.Sources.Add(trader);
+
+            var address = IPAddress.Parse("72.5.42.156");
+
+            Trader = new BlackwoodTrader();
+            Trader.Login = "FUSDEMO09";
+            Trader.Password = "m6e533";
+            Trader.ExecutionAddress = new IPEndPoint(address, BlackwoodAddresses.ExecutionPort);
+            Trader.MarketDataAddress = new IPEndPoint(address, BlackwoodAddresses.MarketDataPort);
+            Trader.HistoricalDataAddress = new IPEndPoint(address, BlackwoodAddresses.HistoricalDataPort);
+
+            Trader.Connected += Trader_Connected;
+            Trader.ConnectionError += Trader_ConnectionError;
+            Trader.Disconnected += Trader_Disconnected;
+
+            Trader.NewSecurities += Trader_NewSecurities;
+            Trader.NewPortfolios += portfolios =>
+            {
+                foreach (var portfolio in portfolios)
+                {
+                    Debug.Print("Portfolio name {0}", portfolio.Name);
+                    Debug.Print("Portfolio RealizedPnL {0}", portfolio.RealizedPnL);
+                    Debug.Print("Portfolio UnrealizedPnL {0}", portfolio.UnrealizedPnL);
+                }
+            };
+            Trader.Connect();
+        }
+
+        private void Trader_Disconnected()
+        {
+            Debug.Print("Blackwood disconnected"); ;
+        }
+
+        private void Trader_NewSecurities(IEnumerable<Security> securities)
+        {
+            foreach(var security in securities)
+            {
+                Debug.Print(security.Id);
+            }
+        }
+
+        private void Trader_ConnectionError(Exception obj)
+        {
+            Debug.Print("Blackwood connection error {0}", obj);
+        }
+
+        private void Trader_Connected()
+        {
+            Debug.Print("Blackwood connected");
+            var criteria = new Security
+            {
+                //Type = SecurityTypes.Stock,
+                //Board = ExchangeBoard.Nyse
+            };
+
+            //Trader.LookupSecurities(criteria);
+
+            //var order = new Order
+            //{
+            //    Type = OrderTypes.Limit,
+            //    Portfolio = Portfolio.SelectedPortfolio,
+            //    Volume = Volume.Text.To<decimal>(),
+            //    Price = Price.Text.To<decimal>(),
+            //    Security = Security,
+            //    Direction = IsBuy.IsChecked == true ? OrderDirections.Buy : OrderDirections.Sell,
+            //};
         }
 
         public void Disconnect()
         {
             trader.Disconnect();
+            Trader.Disconnect();
         }
 
         public event Action<int> ConnectionStatus;
@@ -103,7 +184,7 @@ namespace Quasar
         public void Start(int useThreads)
         {
             run = true;
-            int securitiesCount = securities.Count;         //количество загруженный инструментов
+            securitiesCount = securities.Count;         //количество загруженный инструментов
             int stakeSize = securitiesCount / useThreads;   //размер "пучка" инструментов для отправки в поток
             List<Security> securitiesStake = new List<Security>();
 
@@ -132,12 +213,14 @@ namespace Quasar
         private int GetCandles(object obj)
         {
             List<Security> securities = (List<Security>)obj;    //коллекция хранит "пучок", переданных в данный метод, инструментов для закачки таймсерий и передачи их в стратегию          
-            IQFeedTrader trader = new IQFeedTrader();
+            IQFeedTrader trader;
 
-            while (run)
+            while (true)
             {
+                trader = new IQFeedTrader();
+
                 trader.Connect();
-                Thread.Sleep(1000);  //Уснуть на 1000 миллисекунд для того, чтобы дать коннектору установить подключение 
+                Thread.Sleep(1000);  //Уснуть на 1000 миллисекунд для того, чтобы дать коннектору установить подключение
 
                 foreach (var security in securities)
                 {
@@ -179,7 +262,7 @@ namespace Quasar
                         {
                             Processed(i, 1);
                         }
-                    }                  
+                    }
                 }
             }
             return 0;

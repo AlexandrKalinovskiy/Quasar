@@ -72,10 +72,9 @@ namespace Quasar
 
                 aTr = ATR();
                 
-                if (aTr >= 0.8m && aTr <= 3m)
-                {
-                    IsSmooth();
-                    if (ATRPlay() >= 0.5m && VolumePlay() >= 0.8m)
+                if (aTr >= 0.8m && aTr <= 2m)
+                {                  
+                    if (ATRPlay() >= 0.5m && VolumePlay() >= 0.8m && IsSmooth())
                     {
                         int trend = Trend(30, 40);
                         decimal openPrice = 0;
@@ -173,6 +172,7 @@ namespace Quasar
         private decimal IsBaseRoundPrice(int count, Sides sides)
         {
             decimal price = 0;
+
             for (int i = 0; i < count; i++)
             {
                 if (sides == Sides.Buy)
@@ -226,7 +226,6 @@ namespace Quasar
         private bool IsSmooth()
         {
             int percent = 0;
-
             decimal bodySize = 0;
             decimal candleSize = 0;
             int defectiveCount = 0;
@@ -258,8 +257,11 @@ namespace Quasar
             defectivePercent = defectiveCount * 100 / intradayCandles.Count;
             gapsPercent = gapsCount * 100 / intradayCandles.Count;
 
-            if (aTr >= 0.8m && aTr <= 1.2m && gapsPercent <= 12 && defectivePercent < 57)
-                Debug.Print("defectiveCount: {0}, defectivePercent: {1} gapsCount: {2}, gaps%: {3} {4}", defectiveCount, defectivePercent, gapsCount, gapsPercent, intradayCandles[0].Security.Code);
+            if (gapsPercent <= 12 && defectivePercent < 57) //Значения для ATR от 0.8 до 1.2
+            {
+                //Debug.Print("defectiveCount: {0}, defectivePercent: {1} gapsCount: {2}, gaps%: {3} {4}", defectiveCount, defectivePercent, gapsCount, gapsPercent, intradayCandles[0].Security.Code);
+                return true;
+            }
 
             return false;
         }
