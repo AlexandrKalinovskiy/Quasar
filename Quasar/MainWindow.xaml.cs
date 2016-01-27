@@ -79,22 +79,25 @@ namespace Quasar
                     Debug.Print("Connected");
                     btnConnect.IsEnabled = false;
                     btnDisconnect.IsEnabled = true;
-                    worker.Download();
+                    chbIsSync.IsEnabled = false;
+                    worker.Download(chbIsSync.IsChecked.Value);
                     break;
                 case 1:
                     Debug.Print("Disconnected");
                     btnConnect.IsEnabled = true;
                     btnDisconnect.IsEnabled = false;
+                    chbIsSync.IsEnabled = true;
                     break;
                 case 2:
                     Debug.Print("Connection error");
+                    chbIsSync.IsEnabled = true;
                     break;
             }
         }
 
         private void btnConnect_Click(object sender, RoutedEventArgs e)
         {
-            worker.Connect();
+            worker.Connect();            
         }
 
         private void btnDisconnect_Click(object sender, RoutedEventArgs e)
@@ -111,9 +114,10 @@ namespace Quasar
 
         private void btnStart_Click(object sender, RoutedEventArgs e)
         {
-            worker.Start(30);
-            btnStart.IsEnabled = false;
-            btnStop.IsEnabled = true;
+            //worker.Start(30);
+            //btnStart.IsEnabled = false;
+            //btnStop.IsEnabled = true;
+            worker.GetSecurities();
         }
     }
 }

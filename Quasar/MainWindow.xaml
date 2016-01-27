@@ -7,12 +7,13 @@
         mc:Ignorable="d"
         Title="MainWindow" Height="350" Width="525">
     <Grid>
-        <Button x:Name="btnConnect" Content="Connect" HorizontalAlignment="Left" Margin="320,280,0,0" VerticalAlignment="Top" Width="75" Click="btnConnect_Click"/>
-        <Button x:Name="btnDisconnect" Content="Disconnected" HorizontalAlignment="Left" Margin="411,280,0,0" VerticalAlignment="Top" Width="75" Click="btnDisconnect_Click"/>
+        <Button x:Name="btnConnect" Content="Connect" HorizontalAlignment="Left" Margin="290,291,0,0" VerticalAlignment="Top" Width="75" Click="btnConnect_Click"/>
+        <Button x:Name="btnDisconnect" Content="Disconnected" HorizontalAlignment="Left" Margin="183,291,0,0" VerticalAlignment="Top" Width="89" Click="btnDisconnect_Click"/>
         <Label x:Name="lblSec" Content="Label" HorizontalAlignment="Left" Margin="10,56,0,0" VerticalAlignment="Top"/>
-        <Button x:Name="btnStart" Content="Start" HorizontalAlignment="Left" Margin="231,280,0,0" VerticalAlignment="Top" Width="75" Click="btnStart_Click"/>
+        <Button x:Name="btnStart" Content="Start" HorizontalAlignment="Left" Margin="132,167,0,0" VerticalAlignment="Top" Width="75" Click="btnStart_Click"/>
         <Label x:Name="lblThreads" Content="Label" HorizontalAlignment="Left" Margin="10,82,0,0" VerticalAlignment="Top"/>
         <Label x:Name="lblTimer" Content="Label" HorizontalAlignment="Left" Margin="10,108,0,0" VerticalAlignment="Top"/>
-        <Button x:Name="btnStop" Content="Stop" HorizontalAlignment="Left" Margin="231,246,0,0" VerticalAlignment="Top" Width="75" Click="btnStop_Click"/>
+        <Button x:Name="btnStop" Content="Stop" HorizontalAlignment="Left" Margin="183,108,0,0" VerticalAlignment="Top" Width="75" Click="btnStop_Click"/>
+        <CheckBox x:Name="chbIsSync" Content="Синхронизировать" HorizontalAlignment="Left" Margin="382,294,0,0" VerticalAlignment="Top"/>
     </Grid>
 </Window>

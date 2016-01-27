@@ -1,4 +1,5 @@
 ﻿using StockSharp.Algo.Candles;
+using StockSharp.Algo.Storages;
 using StockSharp.Blackwood;
 using StockSharp.BusinessEntities;
 using StockSharp.IQFeed;
@@ -16,11 +17,19 @@ namespace Quasar
     public class Worker
     {
         private BlackwoodTrader Trader;
-
+        private Portfolio portfolio;
+        private IStorageRegistry storage;
+        private ISecurityStorage securityStorage;
 
         // объявляем шлюз
         private IQFeedTrader trader;
         private bool run = false;
+
+        public Worker()
+        {
+            storage = new StorageRegistry();
+            securityStorage = storage.GetSecurityStorage();
+        }
 
         private int securitiesCount = 0;
 
@@ -45,21 +54,22 @@ namespace Quasar
         public void Connect()
         {
             trader = new IQFeedTrader();
-            //trader.Connected += () => SetConnectionStatus(0);
-            //trader.Disconnected += () => SetConnectionStatus(1);
-            //trader.ConnectionError += error => SetConnectionStatus(error);
+            trader.Connected += () => SetConnectionStatus(0);
+            trader.Disconnected += () => SetConnectionStatus(1);
+            trader.ConnectionError += error => SetConnectionStatus(error);
 
-            //trader.Connect();
+            trader.Connect();
 
-            //var monitor = new MonitorWindow();
-            //monitor.Show();
+            var monitor = new MonitorWindow();
+            monitor.Show();
 
-            //logManager.Listeners.Add(new GuiLogListener(monitor));
-            //logManager.Sources.Add(trader);
+            logManager.Listeners.Add(new GuiLogListener(monitor));
+            logManager.Sources.Add(trader);
 
             var address = IPAddress.Parse("72.5.42.156");
 
             Trader = new BlackwoodTrader();
+            logManager.Sources.Add(Trader);
             Trader.Login = "FUSDEMO09";
             Trader.Password = "m6e533";
             Trader.ExecutionAddress = new IPEndPoint(address, BlackwoodAddresses.ExecutionPort);
@@ -71,16 +81,37 @@ namespace Quasar
             Trader.Disconnected += Trader_Disconnected;
 
             Trader.NewSecurities += Trader_NewSecurities;
+
             Trader.NewPortfolios += portfolios =>
             {
                 foreach (var portfolio in portfolios)
                 {
+                    this.portfolio = portfolio;
                     Debug.Print("Portfolio name {0}", portfolio.Name);
                     Debug.Print("Portfolio RealizedPnL {0}", portfolio.RealizedPnL);
                     Debug.Print("Portfolio UnrealizedPnL {0}", portfolio.UnrealizedPnL);
                 }
             };
+
+            //Trader.NewOrders += Trader_NewOrders;
+            //Trader.NewPositions += Trader_NewPositions;
             Trader.Connect();
+        }
+
+        private void Trader_NewPositions(IEnumerable<Position> positions)
+        {
+            foreach (var position in positions)
+            {
+                Debug.Print("Positions {0}", position);
+            }
+        }
+
+        private void Trader_NewOrders(IEnumerable<Order> orders)
+        {
+            foreach(var order in orders)
+            {
+                Debug.Print("Orders {0}", order);
+            }            
         }
 
         private void Trader_Disconnected()
@@ -90,10 +121,7 @@ namespace Quasar
 
         private void Trader_NewSecurities(IEnumerable<Security> securities)
         {
-            foreach(var security in securities)
-            {
-                Debug.Print(security.Id);
-            }
+    
         }
 
         private void Trader_ConnectionError(Exception obj)
@@ -104,23 +132,18 @@ namespace Quasar
         private void Trader_Connected()
         {
             Debug.Print("Blackwood connected");
-            var criteria = new Security
-            {
-                //Type = SecurityTypes.Stock,
-                //Board = ExchangeBoard.Nyse
-            };
-
-            //Trader.LookupSecurities(criteria);
 
             //var order = new Order
             //{
             //    Type = OrderTypes.Limit,
-            //    Portfolio = Portfolio.SelectedPortfolio,
-            //    Volume = Volume.Text.To<decimal>(),
-            //    Price = Price.Text.To<decimal>(),
-            //    Security = Security,
-            //    Direction = IsBuy.IsChecked == true ? OrderDirections.Buy : OrderDirections.Sell,
+            //    Portfolio = portfolio,
+            //    Volume = 100,
+            //    Price = 7.30m,
+            //    Security = criteria,
+            //    Direction = Sides.Buy
             //};
+
+            //Trader.RegisterOrder(order);
         }
 
         public void Disconnect()
@@ -145,18 +168,22 @@ namespace Quasar
 
         //====================================================================================================================================================
 
-        //Метод закачивает инструменты для обработки
-        public void Download()
+        //Метод закачивает инструменты для обработки если флаг установлен в True
+        public void Download(bool IsSync)
         {
-            trader.NewSecurities += trader_NewSecurities;
-
-            var criteria = new Security
+            if (IsSync)
             {
-                Type = SecurityTypes.Stock,
-                Board = ExchangeBoard.Nyse
-            };
+                securityStorage.DeleteBy(new Security());
+                trader.NewSecurities += trader_NewSecurities;
 
-            trader.LookupSecurities(criteria);
+                var criteria = new Security
+                {
+                    Type = SecurityTypes.Stock,
+                    Board = ExchangeBoard.Nyse
+                };
+
+                trader.LookupSecurities(criteria);
+            }
         }
 
         int sc = 0;
@@ -166,14 +193,36 @@ namespace Quasar
         {
             foreach (var security in allSecurities)
             {
-                if (security.Board == ExchangeBoard.Nyse && security.Type == SecurityTypes.Stock && !security.Code.Contains("-")/* && security.Code == "BRK.A" && !security.Code.Contains("*") && !security.Code.Contains("+")*/)
-                {                    
+                if (security.Board == ExchangeBoard.Nyse && security.Type == SecurityTypes.Stock && !security.Code.Contains("-")/* && security.Code == "AA"*/ /*&& !security.Code.Contains("*") && !security.Code.Contains("+")*/)
+                {
                     //if (sc < 30)
-                    securities.Add(security);
-                    //sc++;
-                }
+                    //securities.Add(security);
+                    //var order = new Order
+                    //{
+                    //    Type = OrderTypes.Limit,
+                    //    Portfolio = portfolio,
+                    //    Volume = 100,
+                    //    Price = 7.03m,
+                    //    Security = security,
+                    //    Direction = Sides.Buy
+                    //};
 
+                    //Trader.RegisterOrder(order);
+                    //sc++;
+                    securityStorage.Save(security);
+                }
             }
+        }
+
+        public void GetSecurities()
+        {
+            int count = 0;
+            foreach(var s in securityStorage.GetSecurityIds())
+            {
+                Debug.Print("{0}", s);
+                count++;
+            }
+            Debug.Print("Count {0}", count);
         }
 
         public void Stop()
