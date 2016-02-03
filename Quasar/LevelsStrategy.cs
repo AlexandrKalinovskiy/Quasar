@@ -31,17 +31,17 @@ namespace Quasar
 
         protected override void OnStarted()
         {
-            Order order = new Order()
+            var order = new Order
             {
-                Security = Security,
-                Price = price,
-                Volume = 100,
                 Type = OrderTypes.Limit,
+                Portfolio = Portfolio,
+                Volume = 100,
+                Price = price,
+                Security = Security,
                 Direction = sides
-
             };
 
-            RegisterOrder(order);
+            Connector.RegisterOrder(order);
 
             base.OnStarted();
         }     

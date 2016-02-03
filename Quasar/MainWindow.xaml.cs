@@ -62,7 +62,8 @@ namespace Quasar
             if ((successCount + failCount) == worker.SecuritiesCount)
             {
                 successCount = 0;
-                failCount = 0;               
+                failCount = 0;
+                worker.Start(20);
             }
         }
 
@@ -114,10 +115,14 @@ namespace Quasar
 
         private void btnStart_Click(object sender, RoutedEventArgs e)
         {
-            //worker.Start(30);
-            //btnStart.IsEnabled = false;
-            //btnStop.IsEnabled = true;
-            worker.GetSecurities();
+            worker.Start(20);
+            btnStart.IsEnabled = false;
+            btnStop.IsEnabled = true;
+        }
+
+        private void button_Click(object sender, RoutedEventArgs e)
+        {
+            //worker.GetCandleStorage();
         }
     }
 }

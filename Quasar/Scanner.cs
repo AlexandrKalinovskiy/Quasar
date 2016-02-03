@@ -1,5 +1,6 @@
 ﻿using StockSharp.Algo.Candles;
 using StockSharp.Algo.Strategies;
+using StockSharp.Blackwood;
 using StockSharp.BusinessEntities;
 using StockSharp.Messages;
 using System;
@@ -20,6 +21,9 @@ namespace Quasar
         private decimal todayLow = 1000;                    //сегодняшний минимум
         private decimal aTr = 0;                            //ATR
         private LevelsStrategy strategy;
+
+        public BlackwoodTrader Trader;
+        public Portfolio Portfolio;
 
         public List<Candle> DayCandles
         {
@@ -158,10 +162,11 @@ namespace Quasar
             strategy = new LevelsStrategy()  //Создаем экземпляр стратегии с определенными параметрами
             {
                 Security = dayCandles[0].Security,
-                Portfolio = new Portfolio(),
+                Portfolio = Portfolio,
                 Sides = sides,
                 Price = price,
                 DisposeOnStop = true,
+                Connector = Trader
             };
             StrategyStarted(strategy);
 

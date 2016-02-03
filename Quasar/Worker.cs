@@ -16,10 +16,15 @@ namespace Quasar
 {
     public class Worker
     {
-        private BlackwoodTrader Trader;
-        private Portfolio portfolio;
+
+        //public static MainWindow Instance { get; private set; }
+        public BlackwoodTrader Trader { get; private set; }
+        public Portfolio Portfolio;
         private IStorageRegistry storage;
         private ISecurityStorage securityStorage;
+        private Security security;
+        private List<IQFeedTrader> connectors;
+        private bool IsOneStart = true;
 
         // объявляем шлюз
         private IQFeedTrader trader;
@@ -29,6 +34,8 @@ namespace Quasar
         {
             storage = new StorageRegistry();
             securityStorage = storage.GetSecurityStorage();
+
+            connectors = new List<IQFeedTrader>();
         }
 
         private int securitiesCount = 0;
@@ -41,8 +48,8 @@ namespace Quasar
             }
         }
 
-        private DateTime startSession = new DateTime(DateTime.Now.Year, DateTime.Now.Month, 26, 9, 30, 00);  //начало торговой сессии 
-        private DateTime endSession = new DateTime(DateTime.Now.Year, DateTime.Now.Month, 26, 15, 55, 00);   //окончание торговой сессии 
+        private DateTime startSession = new DateTime(DateTime.Now.Year, DateTime.Now.Month, 3, 9, 30, 00);  //начало торговой сессии 
+        private DateTime endSession = new DateTime(DateTime.Now.Year, DateTime.Now.Month, 3, 15, 55, 00);   //окончание торговой сессии 
 
         //коллекция для хранения списка загруженных инструментов
         private List<Security> securities = new List<Security>();
@@ -70,6 +77,7 @@ namespace Quasar
 
             Trader = new BlackwoodTrader();
             logManager.Sources.Add(Trader);
+
             Trader.Login = "FUSDEMO09";
             Trader.Password = "m6e533";
             Trader.ExecutionAddress = new IPEndPoint(address, BlackwoodAddresses.ExecutionPort);
@@ -80,22 +88,33 @@ namespace Quasar
             Trader.ConnectionError += Trader_ConnectionError;
             Trader.Disconnected += Trader_Disconnected;
 
-            Trader.NewSecurities += Trader_NewSecurities;
-
             Trader.NewPortfolios += portfolios =>
             {
                 foreach (var portfolio in portfolios)
                 {
-                    this.portfolio = portfolio;
+                    Portfolio = portfolio;
                     Debug.Print("Portfolio name {0}", portfolio.Name);
                     Debug.Print("Portfolio RealizedPnL {0}", portfolio.RealizedPnL);
                     Debug.Print("Portfolio UnrealizedPnL {0}", portfolio.UnrealizedPnL);
                 }
             };
 
-            //Trader.NewOrders += Trader_NewOrders;
-            //Trader.NewPositions += Trader_NewPositions;
+            Trader.NewCandles += Trader_NewCandles;
+
+            Trader.NewOrders += Trader_NewOrders;
+            Trader.NewPositions += Trader_NewPositions;
             Trader.Connect();
+        }
+
+        private void Trader_NewCandles(CandleSeries arg1, IEnumerable<Candle> arg2)
+        {
+            foreach (var candle in arg2)
+            {
+                var candleOpenTime = candle.OpenTime - TimeSpan.FromHours(11);
+
+                if (candleOpenTime.Ticks >= startSession.Ticks && candleOpenTime.Ticks <= endSession.Ticks) 
+                    Debug.Print("Open time {0}, Open price {1} {2} - {3}", candleOpenTime, candle.OpenPrice, candle.OpenTime.Ticks, endSession.Ticks);
+            }
         }
 
         private void Trader_NewPositions(IEnumerable<Position> positions)
@@ -119,11 +138,6 @@ namespace Quasar
             Debug.Print("Blackwood disconnected"); ;
         }
 
-        private void Trader_NewSecurities(IEnumerable<Security> securities)
-        {
-    
-        }
-
         private void Trader_ConnectionError(Exception obj)
         {
             Debug.Print("Blackwood connection error {0}", obj);
@@ -131,7 +145,16 @@ namespace Quasar
 
         private void Trader_Connected()
         {
-            Debug.Print("Blackwood connected");
+            Debug.Print("Blackwood connected {0}", Trader.ConnectionState);
+
+            foreach (var security in securityStorage.Lookup(new Security()))
+            {
+                if (security.Code == "A")
+                {
+                    this.security = security;
+                }
+            }
+           
 
             //var order = new Order
             //{
@@ -197,17 +220,6 @@ namespace Quasar
                 {
                     //if (sc < 30)
                     //securities.Add(security);
-                    //var order = new Order
-                    //{
-                    //    Type = OrderTypes.Limit,
-                    //    Portfolio = portfolio,
-                    //    Volume = 100,
-                    //    Price = 7.03m,
-                    //    Security = security,
-                    //    Direction = Sides.Buy
-                    //};
-
-                    //Trader.RegisterOrder(order);
                     //sc++;
                     securityStorage.Save(security);
                 }
@@ -232,6 +244,12 @@ namespace Quasar
 
         public void Start(int useThreads)
         {
+            var storSec = securityStorage.Lookup(new Security());
+            securities.Clear();
+            foreach (var sec in storSec)
+            {
+                securities.Add(sec);
+            }
             run = true;
             securitiesCount = securities.Count;         //количество загруженный инструментов
             int stakeSize = securitiesCount / useThreads;   //размер "пучка" инструментов для отправки в поток
@@ -239,81 +257,109 @@ namespace Quasar
 
             Debug.Print("Securities count {0}", securitiesCount);
 
-            Func<object, int> func = new Func<object, int>(GetCandles);
+            Func<object, IQFeedTrader, int> func = new Func<object, IQFeedTrader, int>(GetCandles);
             IAsyncResult asyncResult;
+
+            int j = 0;
 
             for (int i = 0; i < securitiesCount; i++)
             {
                 securitiesStake.Add(securities[i]);
                 if (securitiesStake.Count == stakeSize)
                 {
-                    asyncResult = func.BeginInvoke(securitiesStake, null, null);
-                    securitiesStake = new List<Security>();
+                    if (IsOneStart)
+                    {
+                        IQFeedTrader connector = new IQFeedTrader();
+                        //connector.Connect();
+                        connectors.Add(connector);
+                    }
+                    //Debug.Print("STAKE SIZE: {0} j = {1}", securitiesStake.Count, j);
+                    asyncResult = func.BeginInvoke(securitiesStake, connectors[j], null, null);
+                    securitiesStake = new List<Security>();                  
+                    j++;
                 }
             }
 
             if (securitiesStake.Count > 0)  //Отправляем последний неполный пучок
             {
-                asyncResult = func.BeginInvoke(securitiesStake, null, null);
+                if (IsOneStart)
+                {
+                    IQFeedTrader connector = new IQFeedTrader();
+                    //connector.Connect();
+                    connectors.Add(connector);
+                }
+                //Debug.Print("STAKE SIZE: {0} j = {1}", securitiesStake.Count, j);
+                asyncResult = func.BeginInvoke(securitiesStake, connectors[j], null, null);                
             }
+            IsOneStart = false;
         }
 
         //Метод получает свечки для каждого обрабатываемого инстумента
-        private int GetCandles(object obj)
+        private int GetCandles(object obj, IQFeedTrader trader)
         {
             List<Security> securities = (List<Security>)obj;    //коллекция хранит "пучок", переданных в данный метод, инструментов для закачки таймсерий и передачи их в стратегию          
-            IQFeedTrader trader;
 
-            while (true)
+            //while (run)
+            //{
+            //trader = new IQFeedTrader();
+
+            trader.Connect();
+            Debug.Print("CONNECTION STATE: {0}", trader.ConnectionState);
+            Thread.Sleep(1000);  //Уснуть на 1000 миллисекунд для того, чтобы дать коннектору установить подключение
+
+            foreach (var security in securities)
             {
-                trader = new IQFeedTrader();
-
-                trader.Connect();
-                Thread.Sleep(1000);  //Уснуть на 1000 миллисекунд для того, чтобы дать коннектору установить подключение
-
-                foreach (var security in securities)
+                if (!run)
                 {
-                    if (!run)
+                    return 0;
+                }
+                bool isDaysSuccess;
+                bool is5MinutesSucсess;
+
+                //Debug.Print("BEFORE");
+                List<Candle> dayCandles = (List<Candle>)trader.GetHistoricalCandles(security, typeof(TimeFrameCandle), TimeSpan.FromDays(1), 65, out isDaysSuccess);   //получить дневные свечки текущего инструмента
+                List<Candle> candles = (List<Candle>)trader.GetHistoricalCandles(security, typeof(TimeFrameCandle), TimeSpan.FromMinutes(5), 100, out is5MinutesSucсess);   //получить пятиминутные свечки текущего инструмента
+                List<Candle> intradayCandles = new List<Candle>();     //"чистые" свечки - с начала сессии по текущую 
+                                                                       //Debug.Print("AFTER");
+
+                foreach (var candle in candles)
+                {
+                    var candleOpenTime = candle.OpenTime - TimeSpan.FromHours(5);
+
+                    if (candleOpenTime.Ticks >= startSession.Ticks && candleOpenTime.Ticks <= endSession.Ticks) //если свечка относится к текущей сессии, то добавляем ее в "чистую" коллекцию
                     {
-                        return 0;
+                        intradayCandles.Add(candle);
+                        //if(candle.Security.Code == "A")
+                        //    Debug.Print("{0}, {1}", candleOpenTime, candle.ClosePrice);
                     }
-                    bool isDaysSuccess;
-                    bool is5MinutesSucсess;
+                }
 
-                    List<Candle> dayCandles = (List<Candle>)trader.GetHistoricalCandles(security, typeof(TimeFrameCandle), TimeSpan.FromDays(1), 65, out isDaysSuccess);   //получить дневные свечки текущего инструмента
-                    List<Candle> candles = (List<Candle>)trader.GetHistoricalCandles(security, typeof(TimeFrameCandle), TimeSpan.FromMinutes(5), 100, out is5MinutesSucсess);   //получить пятиминутные свечки текущего инструмента
-                    List<Candle> intradayCandles = new List<Candle>();     //"чистые" свечки - с начала сессии по текущую 
-
-                    foreach (var candle in candles)
+                if (!blackList.Contains(security))  //Если по текущему инструменту еще нет запущенных стратегий, то отправляем его на сканирование
+                {
+                    Scanner scanner = new Scanner
                     {
-                        var candleOpenTime = candle.OpenTime - TimeSpan.FromHours(5);
+                        DayCandles = dayCandles,
+                        IntradayCandles = intradayCandles,
+                        Trader = Trader,
+                        //Portfolio = Portfolio
+                        Portfolio = new Portfolio()
+                    };
 
-                        if (candleOpenTime.Ticks >= startSession.Ticks && candleOpenTime.Ticks <= endSession.Ticks) //если свечка относится к текущей сессии, то добавляем ее в "чистую" коллекцию
-                        {
-                            intradayCandles.Add(candle);
-                        }
-                    }
+                    scanner.StrategyStarted += Scanner_StrategyStarted; //Подписываемся на события старта стратегии, чтобы добавить ее в менеджер логгирования для отслеживания
 
-                    if (!blackList.Contains(security))  //Если по текущему инструменту еще нет запущенных стратегий, то отправляем его на сканирование
+                    int i = scanner.Scan();
+                    if (i == 1)
+                        Processed(i, 0);
+                    else
                     {
-                        Scanner scanner = new Scanner
-                        {
-                            DayCandles = dayCandles,
-                            IntradayCandles = intradayCandles
-                        };
-
-                        scanner.StrategyStarted += Scanner_StrategyStarted; //Подписываемся на события старта стратегии, чтобы добавить ее в менеджер логгирования для отслеживания
-
-                        int i = scanner.Scan();
-                        if (i == 1)
-                            Processed(i, 0);
-                        else
-                        {
-                            Processed(i, 1);
-                        }
+                        Processed(i, 1);
                     }
                 }
             }
+            //trader.Disconnect();
+            //Thread.Sleep(1000);
+            //trader.Dispose();
+            //}
             return 0;
         }
 
@@ -325,5 +371,16 @@ namespace Quasar
 
         //на данное событие подписываются внешние обработчики. Событие наступает после анализа и обработки инструмента
         public event Action<int, int> Processed;
+
+        //public void GetCandleStorage()
+        //{
+        //    DateTime date = new DateTime(DateTime.Now.Year, DateTime.Now.Month, 1, 23, 0, 0);
+        //    foreach (var security in securityStorage.Lookup(new Security()))
+        //    {
+        //        var candleStorage = storage.GetCandleStorage(typeof(TimeFrameCandle), security, TimeSpan.FromMinutes(5));
+        //        var candles = candleStorage.Load(date);
+                
+        //    }         
+        //}
     }
 }
